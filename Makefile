@@ -4,13 +4,14 @@
 #
 RAMDISK = #-DRAMDISK=512
 
-AS86	=as86 -0 -a
+# AS86	=as86 -0 -a # as86是8086..80386处理器下的汇编程序；我这里改成 ia32
+AS86 = ia32 -0 -a 
 LD86	=ld86 -0
 
 AS	=gas
 LD	=gld
 LDFLAGS	=-s -x -M
-CC	=gcc $(RAMDISK)
+CC	=clang $(RAMDISK)
 CFLAGS	=-Wall -O -fstrength-reduce -fomit-frame-pointer \
 -fcombine-regs -mstring-insns
 CPP	=cpp -nostdinc -Iinclude
@@ -20,8 +21,8 @@ CPP	=cpp -nostdinc -Iinclude
 # This can be either FLOPPY, /dev/xxxx or empty, in which case the
 # default of /dev/hd6 is used by 'build'.
 #
-ROOT_DEV=/dev/hd6
-SWAP_DEV=/dev/hd2
+ROOT_DEV=/dev/hd6 # 指定根设备
+SWAP_DEV=/dev/hd2 # 指定交换设备
 
 ARCHIVES=kernel/kernel.o mm/mm.o fs/fs.o
 DRIVERS =kernel/blk_drv/blk_drv.a kernel/chr_drv/chr_drv.a

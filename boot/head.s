@@ -110,6 +110,7 @@ setup_gdt:
  * I put the kernel page tables right after the page directory,
  * using 4 of them to span 16 Mb of physical memory. People with
  * more than 16MB will have to expand this.
+ *  这个分页有点粗暴
  */
 .org 0x1000
 pg0:
@@ -132,6 +133,7 @@ pg3:
 _tmp_floppy_area:
 	.fill 1024,1,0
 
+# 分配页面完毕，跳转到main函数
 after_page_tables:
 	pushl $0		# These are the parameters to main :-)
 	pushl $0
@@ -184,6 +186,7 @@ ignore_int:
  * use just the lower 1Mb, or the local data space, which
  * will be mapped to some other place - mm keeps track of
  * that.
+ * 老兄可以的，把内存写死最大16M
  *
  * For those with more memory than 16 Mb - tough luck. I've
  * not got it, why should you :-) The source is here. Change

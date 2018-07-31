@@ -2,6 +2,7 @@
 ! SYS_SIZE is the number of clicks (16 bytes) to be loaded.
 ! 0x3000 is 0x30000 bytes = 196kB, more than enough for current
 ! versions of linux
+! SYS_SIZE 是 clicks(16kb) 的数量，0x3000 是 0x30000字节，就是196kb，当前linux版本够用了
 !
 #include <linux/config.h>
 SYSSIZE = DEF_SYSSIZE
@@ -11,39 +12,45 @@ SYSSIZE = DEF_SYSSIZE
 !
 ! bootsect.s is loaded at 0x7c00 by the bios-startup routines, and moves
 ! iself out of the way to address 0x90000, and jumps there.
+! bios启动把 bootsect.s加载在 0x7c00，bootsect.s自己会移动到 0x90000，并跳转到那
 !
 ! It then loads 'setup' directly after itself (0x90200), and the system
 ! at 0x10000, using BIOS interrupts. 
+! 然后在 0x90200 直接加载 setup；系统会加载到 0x10000，并使用BIOS中断跳转到那
 !
 ! NOTE! currently system is at most 8*65536 bytes long. This should be no
 ! problem, even in the future. I want to keep it simple. This 512 kB
 ! kernel size should be enough, especially as this doesn't contain the
 ! buffer cache as in minix
+! linux认为512 kB的内核已经足够了； 目前是 64K 
 !
 ! The loader has been made as simple as possible, and continuos
 ! read errors will result in a unbreakable loop. Reboot by hand. It
 ! loads pretty fast by getting whole sectors at a time whenever possible.
+! 加载器设计得比较简单，持续地读取错误会进入死循环，需要手动重启。加载器启动得很快，尽快进入机器码的段
 
-.globl begtext, begdata, begbss, endtext, enddata, endbss
-.text
-begtext:
-.data
-begdata:
-.bss
+.globl begtext, begdata, begbss, endtext, enddata, endbss !全局变量
+.text !代码段
+begtext: 
+.data !数据段
+begdata: 
+.bss !未初始化全局变量
 begbss:
 .text
 
-SETUPLEN = 4				! nr of setup-sectors
-BOOTSEG  = 0x07c0			! original address of boot-sector
-INITSEG  = DEF_INITSEG			! we move boot here - out of the way
-SETUPSEG = DEF_SETUPSEG			! setup starts here
-SYSSEG   = DEF_SYSSEG			! system loaded at 0x10000 (65536).
-ENDSEG   = SYSSEG + SYSSIZE		! where to stop loading
+SETUPLEN = 4				! nr of setup-sectors 段的数量
+BOOTSEG  = 0x07c0			! original address of boot-sector 启动段的位置
+INITSEG  = DEF_INITSEG			! we move boot here - out of the way 把boot放到这儿
+SETUPSEG = DEF_SETUPSEG			! setup starts here 设置在这里开始
+SYSSEG   = DEF_SYSSEG			! system loaded at 0x10000 (65536). 系统程序放在这里
+ENDSEG   = SYSSEG + SYSSIZE		! where to stop loading 停止加载
 
-! ROOT_DEV & SWAP_DEV are now written by "build".
+! ROOT_DEV & SWAP_DEV are now written by "build". 这两个变量在build设置
 ROOT_DEV = 0
 SWAP_DEV = 0
 
+! 正如上述，这里主要是拷贝bootsect代码段
+! 英特尔的汇编写法，右边是源操作数
 entry start
 start:
 	mov	ax,#BOOTSEG
@@ -58,14 +65,14 @@ start:
 	jmpi	go,INITSEG
 
 go:	mov	ax,cs		
-	mov	dx,#0xfef4	! arbitrary value >>512 - disk parm size
+	mov	dx,#0xfef4	! arbitrary value >>512 - disk parm size 这里用了一个比512-磁盘参数尺寸大得数字
 
 	mov	ds,ax
 	mov	es,ax
 	push	ax
 
 	mov	ss,ax		! put stack at 0x9ff00 - 12.
-	mov	sp,dx
+	mov	sp,dx       ! 设置栈指针位置
 /*
  *	Many BIOS's default disk parameter tables will not 
  *	recognize multi-sector reads beyond the maximum sector number
@@ -86,7 +93,7 @@ go:	mov	ax,cs
 
 	push	#0
 	pop	fs
-	mov	bx,#0x78		! fs:bx is parameter table address
+	mov	bx,#0x78		! fs:bx is parameter table address  参数表地址
 	seg fs
 	lgs	si,(bx)			! gs:si is source
 
@@ -112,7 +119,7 @@ go:	mov	ax,cs
 	
 	xor	ah,ah			! reset FDC 
 	xor	dl,dl
-	int 	0x13	
+	int 	0x13	 ! 通过BIOS的INT 0x13中断来从磁盘加载setup模块。
 
 ! load the setup-sectors directly after the bootblock.
 ! Note that 'es' is already set up.
@@ -402,3 +409,4 @@ enddata:
 .bss
 endbss:
 
+! 参考资料： https://blog.csdn.net/ccccdddxxx/article/details/6618705 
